@@ -1,0 +1,192 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+
+public class GameManager : MonoBehaviour
+{
+    Ads ads;
+    public Image fadePlane;
+    public Text countText;
+    public GameObject gameOver;
+    public GameObject gameClear;
+    
+    public GameObject gameClearButton;
+    public GameObject gameOverButton;
+    public GameObject bulletStick;
+
+    EnemyController enemyController;
+
+    public GameObject enemy;
+
+    public float endTime = 3f;
+    GameObject[] enemies;
+
+    bool start = false;
+    bool search = false;
+    bool isGameClear = false;
+    bool isGameOver = false;
+
+    public int enemyCount = 40;
+    public int Number;
+
+    void Start()
+    {
+        ads = FindObjectOfType<Ads>();
+
+        gameOver.SetActive(false);
+        gameClear.SetActive(false);
+        fadePlane.gameObject.SetActive(false);
+
+        gameClearButton.SetActive(false);
+        gameOverButton.SetActive(false);
+
+        start = false;
+        search = false;
+        isGameClear = false;
+        isGameOver = false;
+        StartCoroutine("EnemyCount", 5.0f);
+
+        UpdateCount();
+    }
+
+    void GameClear()
+    {
+        //セーブデータの更新
+        if (PlayerPrefs.GetInt("CLEAR, 0") < Number) 
+        {
+            //セーブされているステージNoより今のステージNoが大きいければ
+            PlayerPrefs.SetInt("CLEAR", Number);
+        }
+
+        gameClear.SetActive(true);
+        isGameClear = true;
+        Invoke("GameAd", 2f);
+        Invoke("GameEnd", 2.5f);
+    }
+
+    public void GameClearEnd()
+    {
+        gameClearButton.SetActive(true);
+    }
+
+    public void GameOver()
+    {
+        gameOver.SetActive(true);
+        fadePlane.gameObject.SetActive(true);
+        bulletStick.SetActive(false);
+        StartCoroutine(Fade(Color.clear, new Color(0, 0, 0, 0.95f), 1));
+        isGameOver = true;
+        Invoke("GameAd", 2f);
+        Invoke("GameEnd", 2.5f);
+    }
+
+    public void GameOverEnd()
+    {
+        gameOverButton.SetActive(true);;
+    }
+
+    public void GameAd()
+    {
+        ads.ShowInterstitialAd();
+    }
+
+    public void Stop()
+    {
+        Debug.Log("Stop");
+    }
+
+    public void GameEnd()
+    {
+        if (isGameClear)
+        {
+            GameClearEnd();
+        }
+
+        if (isGameOver)
+        {
+            GameOverEnd();
+        }
+    }
+
+    IEnumerator Fade(Color from, Color to, float time)
+    {
+        float speed = 1 / time;
+        float percent = 0;
+
+        while (percent < 1)
+        {
+            percent += Time.deltaTime * speed;
+            fadePlane.color = Color.Lerp(from, to, percent);
+            yield return null;
+        }
+    }
+
+    IEnumerator EnemyCount()
+    {
+        yield return new WaitForSeconds(endTime);
+        search = true;
+        enemies = GameObject.FindGameObjectsWithTag("Enemy");
+        start = true;
+
+        if (start)
+        {
+            yield break;
+        }
+    }
+
+    void Search()
+    {
+        if (search)
+        {
+            enemies = GameObject.FindGameObjectsWithTag("Enemy");
+
+            if (enemies.Length == 0)
+            {
+                GameClear();
+            }
+        }
+    }
+
+    public void Delay()
+    {
+        Invoke("Search", 0.1f);
+    }
+
+    public void Count(int count)
+    {
+        enemyCount -= count;
+        UpdateCount();
+    }
+
+    void UpdateCount()
+    {
+        countText.text = "残り: " + enemyCount;
+    }
+
+    public void NormalRetryButton(int stageNo)
+    {
+        SceneManager.LoadScene("NormalStage" + stageNo);
+    }
+
+    public void StageSelectButton()
+    {
+        SceneManager.LoadScene("StageSelect");
+    }
+
+    public void NextNormalStage(int stageNo)
+    {
+        SceneManager.LoadScene("NormalStage" + stageNo);
+    }
+
+    public void NextSecondStage(int stageNo)
+    {
+        SceneManager.LoadScene("SecondStage" + stageNo);
+    }
+
+    public void NextThirdStage(int stageNo)
+    {
+        SceneManager.LoadScene("ThirdStage" + stageNo);
+    }
+}
